@@ -29,6 +29,12 @@ func delay(seconds: Double, completion: @escaping ()-> Void) {
 }
 
 class ViewController: UIViewController {
+    
+  // Enum Animation
+  enum AnimationDirection: Int {
+    case positive = 1
+    case negative = -1
+  }
   
   @IBOutlet var bgImageView: UIImageView!
   
@@ -70,16 +76,26 @@ class ViewController: UIViewController {
     func changeFlight(to data: FlightData, animated: Bool = false) {
     // populate the UI with the next flight's data
     summary.text = data.summary
-    flightNr.text = data.flightNr
-    gateNr.text = data.gateNr
     departingFrom.text = data.departingFrom
     arrivingTo.text = data.arrivingTo
     flightStatus.text = data.flightStatus
     if animated {
         fade(imageView: bgImageView, toImage: UIImage(named: data.weatherImageName)!, showEffects: data.showWeatherEffects)
+        let direction = data.isTakingOff ? AnimationDirection.positive : AnimationDirection.negative
+        // Apply cube transitions
+        cubeTransition(label: flightNr, text: data.flightNr, direction: direction)
+        cubeTransition(label: gateNr, text: data.gateNr, direction: direction)
+        // Departure and Arrive labels animation
+        let offsetDeparting = CGPoint(x: CGFloat(direction.rawValue * 80), y: 0.0)
+        let offsetArriving = CGPoint(x: CGFloat(direction.rawValue * 50), y: 0.0)
+        labelTransition(label: departingFrom, text: data.departingFrom, offset: offsetDeparting)
+        labelTransition(label: arrivingTo, text: data.arrivingTo, offset: offsetArriving)
+        
     } else {
         bgImageView.image = UIImage(named: data.weatherImageName)
         snowView.isHidden = !data.showWeatherEffects
+        flightNr.text = data.flightNr
+        gateNr.text = data.gateNr
     }
     bgImageView.image = UIImage(named: data.weatherImageName)
     snowView.isHidden = !data.showWeatherEffects
@@ -100,6 +116,71 @@ class ViewController: UIViewController {
         UIView.animate(withDuration: 1, delay: 0.0, options: .curveEaseOut, animations: {
             self.snowView.alpha = showEffects ? 1 : 0
         }, completion: nil)
+    }
+    
+    // Cube transition for flight and gate numbers
+    func cubeTransition(label: UILabel, text: String, direction: AnimationDirection) {
+        // Crate aux label
+        let auxLabel = UILabel(frame: label.frame)
+        auxLabel.text = text
+        auxLabel.font = label.font
+        auxLabel.textAlignment = label.textAlignment
+        auxLabel.textColor = label.textColor
+        auxLabel.backgroundColor = label.backgroundColor
+        
+        // Offset
+        let auxLabelOffset = CGFloat(direction.rawValue) * label.frame.size.height / 2
+        
+        // Transformation Y scale
+        auxLabel.transform = CGAffineTransform(scaleX: 1, y: 0.1).concatenating(CGAffineTransform(translationX: 0, y: auxLabelOffset))
+        
+        // Put auxLabel at sabe level as label passed as argument
+        label.superview?.addSubview(auxLabel)
+        
+        // Animations
+        UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations: {
+            auxLabel.transform = .identity
+            label.transform = CGAffineTransform(scaleX: 1, y: 0.1).concatenating(CGAffineTransform(translationX: 0.0, y: -auxLabelOffset))
+        }) { _ in
+            label.text = text
+            label.transform = .identity
+            
+            auxLabel.removeFromSuperview()
+        }
+    }
+    
+    // Label transition
+    func labelTransition(label: UILabel, text: String, offset: CGPoint) {
+        let auxLabel = UILabel(frame: label.frame)
+        auxLabel.text = text
+        auxLabel.font = label.font
+        auxLabel.textAlignment = label.textAlignment
+        auxLabel.backgroundColor = UIColor.clear
+        auxLabel.textColor = label.textColor
+        
+        // Transform
+        auxLabel.transform = CGAffineTransform(scaleX: 1, y: 0.1).concatenating(CGAffineTransform(translationX: offset.x, y: offset.y))
+        auxLabel.alpha = 0
+        view.addSubview(auxLabel)
+        
+        // Cresting a ghost effect giving a delay between animations
+        // To change if needed
+        UIView.animate(withDuration: 0.5, delay: 0.0, options: .curveEaseIn, animations: {
+            label.transform = CGAffineTransform(translationX: offset.x, y: offset.y)
+            label.alpha = 0
+        }, completion: nil)
+        
+        UIView.animate(withDuration: 0.5, delay: 0.3, options: .curveEaseIn, animations: {
+            auxLabel.transform = .identity
+            auxLabel.alpha = 1.0
+        }) { _ in
+            // Back to the begin
+            auxLabel.alpha = 0.0
+            auxLabel.removeFromSuperview()
+            label.text = text
+            label.transform = .identity
+            label.alpha = 1.0
+        }
     }
 }
 
