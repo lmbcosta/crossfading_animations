@@ -85,6 +85,8 @@ class ViewController: UIViewController {
         // Apply cube transitions
         cubeTransition(label: flightNr, text: data.flightNr, direction: direction)
         cubeTransition(label: gateNr, text: data.gateNr, direction: direction)
+        //cubeTransition(label: flightStatus, text: data.flightStatus, direction: .positive)
+        _cubeTransition(label: flightStatus, text: data.flightStatus)
         // Departure and Arrive labels animation
         let offsetDeparting = CGPoint(x: CGFloat(direction.rawValue * 80), y: 0.0)
         let offsetArriving = CGPoint(x: CGFloat(direction.rawValue * 50), y: 0.0)
@@ -134,7 +136,7 @@ class ViewController: UIViewController {
         // Transformation Y scale
         auxLabel.transform = CGAffineTransform(scaleX: 1, y: 0.1).concatenating(CGAffineTransform(translationX: 0, y: auxLabelOffset))
         
-        // Put auxLabel at sabe level as label passed as argument
+        // Put auxLabel at same level as label passed as argument
         label.superview?.addSubview(auxLabel)
         
         // Animations
@@ -181,6 +183,36 @@ class ViewController: UIViewController {
             label.transform = .identity
             label.alpha = 1.0
         }
+    }
+    
+    fileprivate func _cubeTransition(label: UILabel, text: String) {
+        // Cretae aux label
+        let auxLabel = UILabel(frame: label.frame)
+        auxLabel.text = text
+        auxLabel.font = label.font
+        auxLabel.textAlignment = label.textAlignment
+        auxLabel.textColor = label.textColor
+        auxLabel.backgroundColor = label.backgroundColor
+        
+        let offset = label.frame.size.height / 2 * -1
+        
+        // Transform auxLabel and position label as subview
+        auxLabel.transform = CGAffineTransform(scaleX: 1, y: 0.1).concatenating(CGAffineTransform(translationX: 0.0, y: offset))
+        auxLabel.alpha = 0
+        self.view.addSubview(auxLabel)
+        
+        // Animation
+        UIView.animate(withDuration: 0.5, delay: 0.0, options: .curveEaseInOut, animations: {
+            label.transform = CGAffineTransform(scaleX: 1, y: 0.1).concatenating(CGAffineTransform(translationX: 0, y: -1 * offset))
+            auxLabel.alpha = 1
+            auxLabel.transform = .identity
+        }) { _ in
+            label.text = text
+            label.transform = .identity
+            auxLabel.removeFromSuperview()
+        }
+        
+        
     }
 }
 
